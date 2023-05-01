@@ -1,7 +1,7 @@
 import tkinter as tk
 from CSV import CSV
 from tkinter import filedialog
-from Data_management import Data_managemnt as dm
+from Data_management import Data_management as dm
 from PIL import Image, ImageTk
 from pandastable import Table
 
@@ -17,19 +17,22 @@ class App(tk.Tk):
         self.button = None
         self.Label = None
         self.message = None
-        global csv
-        csv = None
+        self.csv = None
         self.title('Avoid Accident 101')
         self.homepage()
+        self.dm = None
 
     def run(self):
         self.mainloop()
 
     def readcsv(self):
         file_path = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
-        global csv
-        csv = CSV(file_path)
-        self.message = tk.messagebox.showinfo('Success', 'open CSV file successfully')
+        self.csv = CSV(file_path)
+        if self.csv.get_data() is False:
+            self.message = tk.messagebox.showerror('Error', 'open CSV file failed')
+        else:
+            self.message = tk.messagebox.showinfo('Success', 'open CSV file successfully')
+            self.dm = dm(self.csv.get_data())
 
     def homepage(self):
         # structure
@@ -55,7 +58,6 @@ class App(tk.Tk):
         self.button2.place(relx=0.5, rely=0.75, anchor=tk.CENTER)
 
     def mainpage(self):
-        global csv
         self.home_fm.destroy()
         self.home_c.destroy()
         self.Label.destroy()
@@ -73,7 +75,7 @@ class App(tk.Tk):
         menubar = tk.Menu(self)
         self.config(menu=menubar)
         menu = tk.Menu(menubar, tearoff=0)
-        menu.add_command(label='Open CSV', command=self.readcsv)
+        menu.add_command(label='Load CSV', command=self.readcsv)
         menu.add_command(label='Exit', command=self.destroy)
         menubar.add_cascade(label='Menu', menu=menu)
 
@@ -86,7 +88,8 @@ class App(tk.Tk):
         menuframe.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
         text = tk.StringVar(self)
         text.set("Select an Option")
-        option = tk.OptionMenu(menuframe, text, *["Show data", "1", "2", "3", "4"])
+        choice = ["Show data", "most accident per province", "2", "3", "4"]
+        option = tk.OptionMenu(menuframe, text, *choice)
         option.config(width=50)
         option.grid(row=0, column=0, pady=100, sticky=tk.SW)
 
@@ -97,14 +100,17 @@ class App(tk.Tk):
                 table_fm = tk.Frame(graphframe)
                 table_fm.pack(fill=tk.BOTH, expand=1)
                 try:
-                    simple_table = Table(table_fm, dataframe=csv.get_data(), height=500, showstatusbar=True)
+                    simple_table = Table(table_fm, dataframe=self.csv.get_data(), height=500, showstatusbar=True)
                     simple_table.show()
                 except:
                     self.message = tk.messagebox.showinfo("Error", "Please select a CSV file", icon="warning")
                 return
+            elif text.get() == "most accident per province":
+                self.dm.province_bar().pack()
             else:
                 print("Selected Option: {}".format(text.get()))
             return None
 
+        # button frame
         submit_button = tk.Button(menuframe, text='Submit', command=option_list)
         submit_button.grid(row=1, column=0)
